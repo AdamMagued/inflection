@@ -121,6 +121,7 @@ var irregularInflections = IrregularSlice{
 	{"moose", "moose"},
 	{"tooth", "teeth"},
 	{"leaf", "leaves"},
+	{"quota", "quotas"},
 	{"chassis", "chassis"},
 }
 

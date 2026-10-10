@@ -80,6 +80,7 @@ var inflections = map[string]string{
 	"harddrive":   "harddrives",
 	"drive":       "drives",
 	"leaf":        "leaves",
+	"quota":       "quotas",
 }
 
 // storage is used to restore the state of the global variables
@@ -95,17 +96,17 @@ var backup = storage{}
 
 func init() {
 	AddIrregular("criterion", "criteria")
-	copy(backup.singulars, singularInflections)
-	copy(backup.plurals, pluralInflections)
-	copy(backup.irregulars, irregularInflections)
-	copy(backup.uncountables, uncountableInflections)
+	backup.singulars = GetSingular()
+	backup.plurals = GetPlural()
+	backup.irregulars = GetIrregular()
+	backup.uncountables = GetUncountable()
 }
 
 func restore() {
-	copy(singularInflections, backup.singulars)
-	copy(pluralInflections, backup.plurals)
-	copy(irregularInflections, backup.irregulars)
-	copy(uncountableInflections, backup.uncountables)
+	SetSingular(backup.singulars)
+	SetPlural(backup.plurals)
+	SetIrregular(backup.irregulars)
+	SetUncountable(backup.uncountables)
 }
 
 func TestPlural(t *testing.T) {
@@ -136,6 +137,35 @@ func TestSingular(t *testing.T) {
 
 		if v := Singular(value); v != key {
 			t.Errorf("%v's singular should be %v, but got %v", value, key, v)
+		}
+	}
+}
+
+func TestQuota(t *testing.T) {
+	cases := []struct {
+		singular string
+		plural   string
+	}{
+		{"quota", "quotas"},
+		{"Quota", "Quotas"},
+		{"QUOTA", "QUOTAS"},
+	}
+
+	for _, c := range cases {
+		if got := Plural(c.singular); got != c.plural {
+			t.Errorf("Plural(%q) = %q, want %q", c.singular, got, c.plural)
+		}
+
+		if got := Singular(c.plural); got != c.singular {
+			t.Errorf("Singular(%q) = %q, want %q", c.plural, got, c.singular)
+		}
+
+		if got := Singular(Plural(c.singular)); got != c.singular {
+			t.Errorf("Singular(Plural(%q)) = %q, want %q", c.singular, got, c.singular)
+		}
+
+		if got := Plural(Singular(c.plural)); got != c.plural {
+			t.Errorf("Plural(Singular(%q)) = %q, want %q", c.plural, got, c.plural)
 		}
 	}
 }
