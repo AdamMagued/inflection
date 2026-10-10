@@ -80,6 +80,7 @@ var inflections = map[string]string{
 	"harddrive":   "harddrives",
 	"drive":       "drives",
 	"leaf":        "leaves",
+	"wolf":        "wolves",
 }
 
 // storage is used to restore the state of the global variables
@@ -95,17 +96,17 @@ var backup = storage{}
 
 func init() {
 	AddIrregular("criterion", "criteria")
-	copy(backup.singulars, singularInflections)
-	copy(backup.plurals, pluralInflections)
-	copy(backup.irregulars, irregularInflections)
-	copy(backup.uncountables, uncountableInflections)
+	backup.singulars = GetSingular()
+	backup.plurals = GetPlural()
+	backup.irregulars = GetIrregular()
+	backup.uncountables = GetUncountable()
 }
 
 func restore() {
-	copy(singularInflections, backup.singulars)
-	copy(pluralInflections, backup.plurals)
-	copy(irregularInflections, backup.irregulars)
-	copy(uncountableInflections, backup.uncountables)
+	SetSingular(backup.singulars)
+	SetPlural(backup.plurals)
+	SetIrregular(backup.irregulars)
+	SetUncountable(backup.uncountables)
 }
 
 func TestPlural(t *testing.T) {
@@ -235,3 +236,77 @@ func TestSetUncountable(t *testing.T) {
 		t.Errorf("Expected len 2, got %d", len(uncountableInflections))
 	}
 }
+
+func TestVesSingularPlural(t *testing.T) {
+	cases := []struct {
+		singular string
+		plural   string
+	}{
+		{"leaf", "leaves"},
+		{"wolf", "wolves"},
+		{"half", "halves"},
+	}
+
+	for _, c := range cases {
+		// Test lowercase
+		if got := Plural(c.singular); got != c.plural {
+			t.Errorf("Plural(%q) = %q, want %q", c.singular, got, c.plural)
+		}
+		if got := Singular(c.plural); got != c.singular {
+			t.Errorf("Singular(%q) = %q, want %q", c.plural, got, c.singular)
+		}
+
+		// Test Title case
+		titleSingular := strings.Title(c.singular)
+		titlePlural := strings.Title(c.plural)
+		if got := Plural(titleSingular); got != titlePlural {
+			t.Errorf("Plural(%q) = %q, want %q", titleSingular, got, titlePlural)
+		}
+		if got := Singular(titlePlural); got != titleSingular {
+			t.Errorf("Singular(%q) = %q, want %q", titlePlural, got, titleSingular)
+		}
+
+		// Test UPPERCASE
+		upperSingular := strings.ToUpper(c.singular)
+		upperPlural := strings.ToUpper(c.plural)
+		if got := Plural(upperSingular); got != upperPlural {
+			t.Errorf("Plural(%q) = %q, want %q", upperSingular, got, upperPlural)
+		}
+		if got := Singular(upperPlural); got != upperSingular {
+			t.Errorf("Singular(%q) = %q, want %q", upperPlural, got, upperSingular)
+		}
+	}
+
+	// Verify regular regex rules operate correctly in isolation without irregular overrides
+	oldIrregulars := GetIrregular()
+	defer SetIrregular(oldIrregulars)
+	SetIrregular(IrregularSlice{})
+
+	for _, c := range cases {
+		if got := Plural(c.singular); got != c.plural {
+			t.Errorf("Plural(%q) without irregulars = %q, want %q", c.singular, got, c.plural)
+		}
+		if got := Singular(c.plural); got != c.singular {
+			t.Errorf("Singular(%q) without irregulars = %q, want %q", c.plural, got, c.singular)
+		}
+
+		titleSingular := strings.Title(c.singular)
+		titlePlural := strings.Title(c.plural)
+		if got := Plural(titleSingular); got != titlePlural {
+			t.Errorf("Plural(%q) without irregulars = %q, want %q", titleSingular, got, titlePlural)
+		}
+		if got := Singular(titlePlural); got != titleSingular {
+			t.Errorf("Singular(%q) without irregulars = %q, want %q", titlePlural, got, titleSingular)
+		}
+
+		upperSingular := strings.ToUpper(c.singular)
+		upperPlural := strings.ToUpper(c.plural)
+		if got := Plural(upperSingular); got != upperPlural {
+			t.Errorf("Plural(%q) without irregulars = %q, want %q", upperSingular, got, upperPlural)
+		}
+		if got := Singular(upperPlural); got != upperSingular {
+			t.Errorf("Singular(%q) without irregulars = %q, want %q", upperPlural, got, upperSingular)
+		}
+	}
+}
+
